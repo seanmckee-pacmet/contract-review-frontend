@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send, Loader2 } from "lucide-react"
+import TypingIndicator from '@/components/TypingIndicator'
 
 type Company = {
   id: string
@@ -32,6 +33,7 @@ export default function DocumentChatPage() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai'; content: string }[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchCompanies()
@@ -108,6 +110,14 @@ export default function DocumentChatPage() {
       setIsLoading(false)
     }
   }
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatHistory, isLoading])
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -190,6 +200,12 @@ export default function DocumentChatPage() {
                       </div>
                     </div>
                   ))}
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <TypingIndicator />
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
                 </div>
               </ScrollArea>
               <div className="flex items-center space-x-2">
@@ -204,6 +220,7 @@ export default function DocumentChatPage() {
                     }
                   }}
                   className="flex-grow"
+                  disabled={isLoading}
                 />
                 <Button onClick={handleSendMessage} disabled={isLoading || !selectedDocuments.length}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
