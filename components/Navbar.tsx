@@ -12,7 +12,7 @@ const Navbar = () => {
   const navItems = [
     { name: 'Manage Docs', href: '/', icon: File },
     { name: 'Review', href: '/review', icon: TableOfContents },
-    { name: 'Chat', href: '/Chat', icon: MessageSquare },
+    { name: 'Chat', href: '/chat', icon: MessageSquare },
     { name: 'Analyze PO', href: '/AnalyzePO', icon: Brain },
   ];
 
