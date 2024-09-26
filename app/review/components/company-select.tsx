@@ -1,11 +1,17 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+type Company = {
+  id: string
+  name: string
+}
+
 type CompanySelectProps = {
   onSelect: (company: string) => void
   value: string
+  companies: Company[]
 }
 
-export function CompanySelect({ onSelect, value }: CompanySelectProps) {
+export function CompanySelect({ onSelect, value, companies }: CompanySelectProps) {
   return (
     <div className="mb-6">
       <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
@@ -16,9 +22,11 @@ export function CompanySelect({ onSelect, value }: CompanySelectProps) {
           <SelectValue placeholder="Select a company" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="company1">Company 1</SelectItem>
-          <SelectItem value="company2">Company 2</SelectItem>
-          <SelectItem value="company3">Company 3</SelectItem>
+          {companies.map((company) => (
+            <SelectItem key={company.id} value={company.id}>
+              {company.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

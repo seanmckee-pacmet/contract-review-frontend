@@ -1,13 +1,17 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import { CompanySelect } from './components/company-select'
 import { FileSelection } from './components/file-selection'
 import { PurchaseOrderUpload } from './components/purchase-order-upload'
 import { ReviewTypeSelection } from './components/review-type-selection'
 import { ReviewResults } from './components/review-results'
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Trash2 } from "lucide-react"
+import { PlusCircle, Trash2, Settings } from "lucide-react"
+import Link from 'next/link'
+
+const API_BASE_URL = "http://localhost:8000/documents"
 
 type Clause = {
   id: string
@@ -24,6 +28,16 @@ type Review = {
   clauses: Clause[]
 }
 
+type Company = {
+  id: string
+  name: string
+}
+
+type Document = {
+  id: string
+  name: string
+}
+
 export default function ContractReviewPage() {
   const [reviews, setReviews] = useState<Review[]>([{ 
     id: '1', 
@@ -35,6 +49,39 @@ export default function ContractReviewPage() {
   }])
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
   const [reviewResults, setReviewResults] = useState<any>(null)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [documents, setDocuments] = useState<Record<string, Document[]>>({})
+
+  useEffect(() => {
+    fetchCompanies()
+  }, [])
+
+  useEffect(() => {
+    if (reviews[currentReviewIndex].company) {
+      fetchDocuments(reviews[currentReviewIndex].company)
+    }
+  }, [reviews, currentReviewIndex])
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/companies`)
+      setCompanies(response.data.data || [])
+    } catch (error) {
+      console.error("Error fetching companies:", error)
+    }
+  }
+
+  const fetchDocuments = async (companyId: string) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/${companyId}`)
+      setDocuments(prevDocuments => ({
+        ...prevDocuments,
+        [companyId]: response.data.data
+      }))
+    } catch (error) {
+      console.error("Error fetching documents:", error)
+    }
+  }
 
   const addReview = () => {
     setReviews([...reviews, { 
@@ -58,24 +105,16 @@ export default function ContractReviewPage() {
     const updatedReviews = [...reviews]
     updatedReviews[currentReviewIndex] = { ...updatedReviews[currentReviewIndex], [field]: value }
     setReviews(updatedReviews)
+    
+    // If the company is updated, reset the files
+    if (field === 'company') {
+      updatedReviews[currentReviewIndex].files = []
+    }
   }
 
   const handleSubmit = () => {
-    // Simulating API call with setTimeout
-    setTimeout(() => {
-      const mockResults = reviews.map(review => ({
-        id: review.id,
-        company: review.company,
-        clauses: review.clauses.map(clause => ({
-          name: clause.name,
-          quotes: [
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-          ]
-        }))
-      }))
-      setReviewResults(mockResults)
-    }, 2000)
+    // TODO: Implement actual API call for submitting review
+    console.log("Submitting review:", reviews[currentReviewIndex])
   }
 
   return (
@@ -112,13 +151,15 @@ export default function ContractReviewPage() {
             </div>
             
             <CompanySelect 
-              onSelect={(company) => updateReview('company', company)} 
+              onSelect={(companyId) => updateReview('company', companyId)} 
               value={reviews[currentReviewIndex].company}
+              companies={companies}
             />
             
             <FileSelection 
               onSelect={(files) => updateReview('files', files)} 
               selectedFiles={reviews[currentReviewIndex].files}
+              availableFiles={documents[reviews[currentReviewIndex].company] || []}
             />
             
             <PurchaseOrderUpload 
@@ -126,12 +167,20 @@ export default function ContractReviewPage() {
               currentFile={reviews[currentReviewIndex].purchaseOrder}
             />
             
-            <ReviewTypeSelection 
-              onSelectType={(type) => updateReview('reviewType', type)} 
-              onCustomClausesChange={(clauses) => updateReview('clauses', clauses)}
-              currentType={reviews[currentReviewIndex].reviewType}
-              currentClauses={reviews[currentReviewIndex].clauses}
-            />
+            <div className="flex items-center justify-between mb-6">
+              <ReviewTypeSelection 
+                onSelectType={(type) => updateReview('reviewType', type)} 
+                onCustomClausesChange={(clauses) => updateReview('clauses', clauses)}
+                currentType={reviews[currentReviewIndex].reviewType}
+                currentClauses={reviews[currentReviewIndex].clauses}
+              />
+              <Link href="/review-criteria">
+                <Button variant="outline">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Manage Review Criteria
+                </Button>
+              </Link>
+            </div>
             
             <div className="mt-8">
               <Button onClick={handleSubmit} className="w-full">

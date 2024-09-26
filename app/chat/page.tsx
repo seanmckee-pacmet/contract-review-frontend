@@ -34,6 +34,7 @@ export default function DocumentChatPage() {
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchCompanies()
@@ -112,7 +113,12 @@ export default function DocumentChatPage() {
   }
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (chatContainerRef.current) {
+      const scrollHeight = chatContainerRef.current.scrollHeight
+      const height = chatContainerRef.current.clientHeight
+      const maxScrollTop = scrollHeight - height
+      chatContainerRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0
+    }
   }
 
   useEffect(() => {
@@ -120,16 +126,18 @@ export default function DocumentChatPage() {
   }, [chatHistory, isLoading])
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Document Chat</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="col-span-1 lg:col-span-1">
+    <div className="h-screen bg-gray-100 flex flex-col">
+      <div className="py-6 px-4 sm:px-6 lg:px-8 bg-white shadow">
+        <h1 className="text-3xl font-bold text-gray-900">Document Chat</h1>
+      </div>
+      <div className="flex-grow flex overflow-hidden">
+        <div className="flex-grow flex lg:flex-row max-w-7xl mx-auto w-full p-6 space-y-6 lg:space-y-0 lg:space-x-6">
+          <Card className="w-full lg:w-1/3 lg:min-w-[300px] overflow-hidden flex flex-col">
             <CardHeader>
               <CardTitle>Select Company and Documents</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="flex-grow overflow-hidden flex flex-col">
+              <div className="space-y-4 flex-shrink-0">
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
                     Company
@@ -147,41 +155,41 @@ export default function DocumentChatPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                {selectedCompany && (
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Select Documents</h3>
-                    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                      <div className="space-y-2">
-                        {documents[selectedCompany.id]?.map((document) => (
-                          <div key={document.id} className="flex items-start space-x-2">
-                            <Checkbox
-                              id={document.id}
-                              checked={selectedDocuments.some(d => d.id === document.id)}
-                              onCheckedChange={() => handleDocumentToggle(document)}
-                              className="mt-1"
-                            />
-                            <label
-                              htmlFor={document.id}
-                              className="text-sm leading-tight cursor-pointer"
-                            >
-                              {document.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                )}
               </div>
+              {selectedCompany && (
+                <div className="mt-4 flex-grow overflow-hidden flex flex-col">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Select Documents</h3>
+                  <ScrollArea className="flex-grow" ref={chatContainerRef}>
+                    <div className="space-y-2 p-4">
+                      {documents[selectedCompany.id]?.map((document) => (
+                        <div key={document.id} className="flex items-start space-x-2">
+                          <Checkbox
+                            id={document.id}
+                            checked={selectedDocuments.some(d => d.id === document.id)}
+                            onCheckedChange={() => handleDocumentToggle(document)}
+                            className="mt-1"
+                          />
+                          <label
+                            htmlFor={document.id}
+                            className="text-sm leading-tight cursor-pointer"
+                          >
+                            {document.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
             </CardContent>
           </Card>
-          <Card className="col-span-1 lg:col-span-2">
+          <Card className="flex-grow overflow-hidden flex flex-col">
             <CardHeader>
               <CardTitle>Chat</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] w-full rounded-md border p-4 mb-4">
-                <div className="space-y-4">
+            <CardContent className="flex-grow overflow-hidden flex flex-col">
+              <div className="flex-grow overflow-y-auto mb-4" ref={chatContainerRef}>
+                <div className="space-y-4 p-4">
                   {chatHistory.map((message, index) => (
                     <div
                       key={index}
@@ -205,10 +213,9 @@ export default function DocumentChatPage() {
                       <TypingIndicator />
                     </div>
                   )}
-                  <div ref={chatEndRef} />
                 </div>
-              </ScrollArea>
-              <div className="flex items-center space-x-2">
+              </div>
+              <div className="flex items-center space-x-2 pt-4">
                 <Input
                   type="text"
                   placeholder="Type your message..."
