@@ -1,101 +1,66 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit, Trash, ChevronDown, Search } from 'lucide-react'
+import axios from 'axios'
+import CriteriaGroupDropdown from './components/CriteriaGroupDropdown'
+import GroupClauses from './components/GroupClauses'
+import ManageClauses from './components/ManageClauses'
+import { CriteriaGroup, Clause } from './types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { Loader2 } from "lucide-react"
 
-interface Clause {
-  id: string
-  name: string
-  description: string
-}
-
-interface CriteriaGroup {
-  id: string
-  name: string
-  clauses: Clause[]
-}
-
-// Dummy data for existing clauses
-const existingClauses: Clause[] = [
-  { id: '1', name: 'Indemnification', description: 'Look for indemnification clauses' },
-  { id: '2', name: 'Termination', description: 'Check for termination conditions' },
-  { id: '3', name: 'Payment Schedule', description: 'Identify payment schedules' },
-  { id: '4', name: 'Late Fees', description: 'Look for late fee clauses' },
-  { id: '5', name: 'Confidentiality', description: 'Identify confidentiality agreements' },
-  { id: '6', name: 'Intellectual Property', description: 'Check for IP ownership and rights' },
-  { id: '7', name: 'Force Majeure', description: 'Identify force majeure clauses' },
-  { id: '8', name: 'Dispute Resolution', description: 'Look for dispute resolution mechanisms' },
-  { id: '9', name: 'Warranty', description: 'Identify warranty terms and conditions' },
-  { id: '10', name: 'Limitation of Liability', description: 'Check for liability limitations' },
-]
+const API_BASE_URL = "http://localhost:8000/review_criteria"  // Adjust this to match your backend URL
 
 export default function ReviewCriteriaManager() {
-  const [criteriaGroups, setCriteriaGroups] = useState<CriteriaGroup[]>([
-    {
-      id: '1',
-      name: 'General Terms',
-      clauses: [existingClauses[0], existingClauses[1]],
-    },
-    {
-      id: '2',
-      name: 'Payment Terms',
-      clauses: [existingClauses[2], existingClauses[3]],
-    },
-  ])
-
+  const [criteriaGroups, setCriteriaGroups] = useState<CriteriaGroup[]>([])
+  const [allClauses, setAllClauses] = useState<Clause[]>([])
   const [selectedGroup, setSelectedGroup] = useState<CriteriaGroup | null>(null)
   const [newGroup, setNewGroup] = useState<CriteriaGroup>({ id: '', name: '', clauses: [] })
   const [newClause, setNewClause] = useState<Clause>({ id: '', name: '', description: '' })
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState<Clause[]>([])
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isAddingNewClause, setIsAddingNewClause] = useState(false)
   const [groupToDelete, setGroupToDelete] = useState<CriteriaGroup | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [clauses, setClauses] = useState<Clause[]>([])
+  const [selectedClause, setSelectedClause] = useState<Clause | null>(null)
+  const [isEditingClause, setIsEditingClause] = useState(false)
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
 
   useEffect(() => {
-    if (searchTerm) {
-      const results = existingClauses.filter(clause =>
-        clause.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        clause.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      setSearchResults(results)
-    } else {
-      setSearchResults([])
+    fetchAllCriteriaGroupsAndClauses()
+    fetchAllClauses()
+  }, [])
+
+  const fetchAllCriteriaGroupsAndClauses = async () => {
+    setIsLoading(true)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/criteria_groups/all`)
+      console.log('Fetched all criteria groups and clauses:', response.data.criteria_groups)
+      setCriteriaGroups(response.data.criteria_groups || [])
+    } catch (error) {
+      console.error('Error fetching all criteria groups and clauses:', error)
+      setCriteriaGroups([])
+    } finally {
+      setIsLoading(false)
     }
-  }, [searchTerm])
+  }
+
+  const fetchAllClauses = async () => {
+    setIsLoading(true)
+    try {
+      const response = await axios.get(`${API_BASE_URL}/clauses`)
+      console.log('Fetched all clauses:', response.data.clauses)
+      setAllClauses(response.data.clauses || [])
+      setClauses(response.data.clauses || [])  // Set clauses for management
+    } catch (error) {
+      console.error('Error fetching all clauses:', error)
+      setAllClauses([])
+      setClauses([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSelectGroup = (groupId: string) => {
     const group = criteriaGroups.find(g => g.id === groupId)
@@ -109,155 +74,240 @@ export default function ReviewCriteriaManager() {
     setNewGroup({ id: '', name: '', clauses: [] })
   }
 
-  const handleAddGroup = () => {
+  const handleAddGroup = async () => {
     if (newGroup.name) {
-      const createdGroup = { ...newGroup, id: Date.now().toString() }
-      setCriteriaGroups([...criteriaGroups, createdGroup])
-      setSelectedGroup(createdGroup)
-      setIsCreatingNewGroup(false)
-      setNewGroup({ id: '', name: '', clauses: [] })
+      try {
+        const response = await axios.post(`${API_BASE_URL}/criteria_groups`, null, { params: { name: newGroup.name } })
+        const createdGroup = response.data.criteria_group
+        setCriteriaGroups([...criteriaGroups, createdGroup])
+        setSelectedGroup(createdGroup)
+        setIsCreatingNewGroup(false)
+        setNewGroup({ id: '', name: '', clauses: [] })
+      } catch (error) {
+        console.error('Error creating new group:', error)
+      }
     }
   }
 
-  const handleAddNewClause = () => {
+  const handleAddNewClause = async () => {
     if (newClause.name && newClause.description) {
-      const clause = { ...newClause, id: Date.now().toString() }
+      try {
+        const response = await axios.post(`${API_BASE_URL}/criteria_groups/${selectedGroup?.id}/clauses`, null, {
+          params: {
+            name: newClause.name,
+            description: newClause.description,
+          }
+        })
+        const clause = response.data.clause
+        
+        // Update the clauses and allClauses states
+        setClauses(prevClauses => [...prevClauses, clause])
+        setAllClauses(prevAllClauses => [...prevAllClauses, clause])
+  
+        if (isCreatingNewGroup) {
+          setNewGroup({
+            ...newGroup,
+            clauses: [...newGroup.clauses, clause]
+          })
+        } else if (selectedGroup) {
+          const updatedGroups = criteriaGroups.map(g => 
+            g.id === selectedGroup.id 
+              ? { ...g, clauses: [...g.clauses, clause] }
+              : g
+          )
+          setCriteriaGroups(updatedGroups)
+          setSelectedGroup({
+            ...selectedGroup,
+            clauses: [...selectedGroup.clauses, clause]
+          })
+        }
+        setNewClause({ id: '', name: '', description: '' })
+        setIsAddingNewClause(false)
+      } catch (error) {
+        console.error('Error adding new clause:', error)
+      }
+    }
+  }
+
+  const handleDeleteClause = async (clauseId: string) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/clauses/${clauseId}`)
+      // Remove clause from clauses state
+      setClauses(prevClauses => prevClauses.filter(c => c.id !== clauseId))
+      // Remove clause from allClauses if needed
+      setAllClauses(prevAllClauses => prevAllClauses.filter(c => c.id !== clauseId))
+      // Update clauses in criteriaGroups
+      setCriteriaGroups(prevGroups => prevGroups.map(group => ({
+        ...group,
+        clauses: group.clauses.filter(c => c.id !== clauseId)
+      })))
+      // Update selectedGroup if necessary
+      if (selectedGroup) {
+        setSelectedGroup(prevGroup => ({
+          ...prevGroup!,
+          clauses: prevGroup!.clauses.filter(c => c.id !== clauseId)
+        }))
+      }
+      // Update newGroup if creating a new group
       if (isCreatingNewGroup) {
+        setNewGroup(prevNewGroup => ({
+          ...prevNewGroup,
+          clauses: prevNewGroup.clauses.filter(c => c.id !== clauseId)
+        }))
+      }
+    } catch (error) {
+      console.error('Error deleting clause:', error)
+      // Optionally handle the error state here
+    }
+  }
+
+  const handleExistingClauseSelection = async (clauseId: string) => {
+    const clause = allClauses.find(c => c.id === clauseId)
+    if (clause) {
+      if (selectedGroup) {
+        try {
+          await axios.post(`${API_BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clause.id}`)
+          const updatedGroups = criteriaGroups.map(g => 
+            g.id === selectedGroup.id 
+              ? { ...g, clauses: [...(g.clauses || []), clause] }
+              : g
+          )
+          setCriteriaGroups(updatedGroups)
+          setSelectedGroup({
+            ...selectedGroup,
+            clauses: [...(selectedGroup.clauses || []), clause]
+          })
+        } catch (error) {
+          console.error('Error adding existing clause:', error)
+        }
+      } else if (isCreatingNewGroup) {
         setNewGroup({
           ...newGroup,
-          clauses: [...newGroup.clauses, clause]
-        })
-      } else if (selectedGroup) {
-        const updatedGroups = criteriaGroups.map(g => 
-          g.id === selectedGroup.id 
-            ? { ...g, clauses: [...g.clauses, clause] }
-            : g
-        )
-        setCriteriaGroups(updatedGroups)
-        setSelectedGroup({
-          ...selectedGroup,
-          clauses: [...selectedGroup.clauses, clause]
+          clauses: [...(newGroup.clauses || []), clause]
         })
       }
-      setNewClause({ id: '', name: '', description: '' })
-      setIsAddingNewClause(false)
     }
   }
 
-  const handleDeleteClause = (clauseId: string) => {
-    if (isCreatingNewGroup) {
-      setNewGroup({
-        ...newGroup,
-        clauses: newGroup.clauses.filter(c => c.id !== clauseId)
-      })
-    } else if (selectedGroup) {
-      const updatedGroups = criteriaGroups.map(g => 
-        g.id === selectedGroup.id 
-          ? { ...g, clauses: g.clauses.filter(c => c.id !== clauseId) }
-          : g
-      )
-      setCriteriaGroups(updatedGroups)
-      setSelectedGroup({
-        ...selectedGroup,
-        clauses: selectedGroup.clauses.filter(c => c.id !== clauseId)
-      })
-    }
-  }
-
-  const handleExistingClauseSelection = (clause: Clause) => {
-    if (selectedGroup) {
-      const updatedGroups = criteriaGroups.map(g => 
-        g.id === selectedGroup.id 
-          ? { ...g, clauses: [...g.clauses, clause] }
-          : g
-      )
-      setCriteriaGroups(updatedGroups)
-      setSelectedGroup({
-        ...selectedGroup,
-        clauses: [...selectedGroup.clauses, clause]
-      })
-    } else if (isCreatingNewGroup) {
-      setNewGroup({
-        ...newGroup,
-        clauses: [...newGroup.clauses, clause]
-      })
-    }
-    setIsSearchOpen(false)
-    setSearchTerm('')
-  }
-
-  const handleDeleteGroup = () => {
+  const handleDeleteGroup = async () => {
     if (groupToDelete) {
-      const updatedGroups = criteriaGroups.filter(g => g.id !== groupToDelete.id)
-      setCriteriaGroups(updatedGroups)
-      if (selectedGroup && selectedGroup.id === groupToDelete.id) {
-        setSelectedGroup(null)
+      try {
+        await axios.delete(`${API_BASE_URL}/criteria_groups/${groupToDelete.id}`)
+        setCriteriaGroups(prevGroups => prevGroups.filter(g => g.id !== groupToDelete.id))
+        if (selectedGroup && selectedGroup.id === groupToDelete.id) {
+          setSelectedGroup(null)
+        }
+        setGroupToDelete(null)
+      } catch (error) {
+        console.error('Error deleting group:', error)
+        // Optionally handle the error state here
       }
-      setGroupToDelete(null)
     }
   }
 
-  const renderClauses = (clauses: Clause[]) => {
-    return clauses.map((clause) => (
-      <TableRow key={clause.id}>
-        <TableCell>{clause.name}</TableCell>
-        <TableCell>{clause.description}</TableCell>
-        <TableCell>
-          <Button variant="destructive" size="sm" onClick={() => handleDeleteClause(clause.id)}>
-            <Trash className="h-4 w-4" />
-          </Button>
-        </TableCell>
-      </TableRow>
-    ))
+  const handleEditClause = (clause: Clause) => {
+    setSelectedClause(clause)
+    setIsEditingClause(true)
+  }
+
+  const handleSaveEditedClause = async () => {
+    if (selectedClause) {
+      try {
+        await axios.put(`${API_BASE_URL}/clauses/${selectedClause.id}`, null, {
+          params: {
+            name: selectedClause.name,
+            description: selectedClause.description,
+          },
+        })
+        // Update clauses state
+        setClauses(
+          clauses.map((c) =>
+            c.id === selectedClause.id ? selectedClause : c
+          )
+        )
+        // Update clauses in criteriaGroups
+        setCriteriaGroups(
+          criteriaGroups.map((group) => ({
+            ...group,
+            clauses: group.clauses.map((c) =>
+              c.id === selectedClause.id ? selectedClause : c
+            ),
+          }))
+        )
+        // Update selectedGroup if necessary
+        if (selectedGroup) {
+          setSelectedGroup({
+            ...selectedGroup,
+            clauses: selectedGroup.clauses.map((c) =>
+              c.id === selectedClause.id ? selectedClause : c
+            ),
+          })
+        }
+        setIsEditingClause(false)
+        setSelectedClause(null)
+      } catch (error) {
+        console.error('Error updating clause:', error)
+      }
+    }
+  }
+
+  const handleRemoveClauseFromGroup = async (clauseId: string) => {
+    if (selectedGroup) {
+      try {
+        await axios.delete(`${API_BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clauseId}`)
+        setSelectedGroup(prevGroup => ({
+          ...prevGroup!,
+          clauses: prevGroup!.clauses.filter(c => c.id !== clauseId)
+        }))
+      } catch (error) {
+        console.error('Error removing clause from group:', error)
+      }
+    }
+  }
+
+  // Add this new function to filter out existing clauses
+  const getAvailableClauses = () => {
+    if (selectedGroup && selectedGroup.clauses) {
+      return allClauses.filter(clause => !selectedGroup.clauses.some(existingClause => existingClause.id === clause.id));
+    } else if (isCreatingNewGroup && newGroup.clauses) {
+      return allClauses.filter(clause => !newGroup.clauses.some(existingClause => existingClause.id === clause.id));
+    }
+    return allClauses;
+  };
+
+
+  const handleGenerateDescription = async () => {
+    if (newClause.name) {
+      setIsGeneratingDescription(true)
+      try {
+        const response = await axios.post(`${API_BASE_URL}/clauses/generate_description`, null, {
+          params: { name: newClause.name }
+        })
+        setNewClause(prevClause => ({
+          ...prevClause,
+          description: response.data.description
+        }))
+      } catch (error) {
+        console.error('Error generating description:', error)
+      } finally {
+        setIsGeneratingDescription(false)
+      }
+    }
   }
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Review Criteria Manager</h1>
       
-      <div className="flex space-x-4 mb-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              {selectedGroup ? selectedGroup.name : "Select Group"} <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Existing Groups</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {criteriaGroups.map((group) => (
-              <DropdownMenuItem key={group.id} onSelect={() => handleSelectGroup(group.id)}>
-                {group.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button onClick={handleCreateNewGroup}>Create New Group</Button>
-
-        {selectedGroup && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" onClick={() => setGroupToDelete(selectedGroup)}>
-                Delete Group
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the
-                  "{selectedGroup.name}" group and all its clauses.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setGroupToDelete(null)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteGroup}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
+      <CriteriaGroupDropdown
+        criteriaGroups={criteriaGroups}
+        selectedGroup={selectedGroup}
+        handleSelectGroup={handleSelectGroup}
+        handleCreateNewGroup={handleCreateNewGroup}
+        handleDeleteGroup={handleDeleteGroup}
+        setGroupToDelete={setGroupToDelete}
+        groupToDelete={groupToDelete}
+      />
 
       {isCreatingNewGroup && (
         <div className="mb-6 p-4 border rounded-lg">
@@ -265,7 +315,7 @@ export default function ReviewCriteriaManager() {
           <Input
             placeholder="Group Name"
             value={newGroup.name}
-            onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewGroup({ ...newGroup, name: e.target.value })}
             className="mb-4"
           />
           <Button onClick={handleAddGroup}>Create Group</Button>
@@ -273,75 +323,34 @@ export default function ReviewCriteriaManager() {
       )}
 
       {(selectedGroup || isCreatingNewGroup) && (
-        <div className="mb-8 p-4 border rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">
-            {isCreatingNewGroup ? "New Group Clauses" : `${selectedGroup?.name} Clauses`}
-          </h2>
-
-          <div className="flex space-x-4 mb-4">
-            <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline">Add Existing Clause</Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[300px] p-0">
-                <Command>
-                  <CommandInput 
-                    placeholder="Search clauses..." 
-                    value={searchTerm}
-                    onValueChange={setSearchTerm}
-                  />
-                  <CommandEmpty>No clauses found.</CommandEmpty>
-                  <CommandGroup>
-                    {searchResults.map((clause) => (
-                      <CommandItem
-                        key={clause.id}
-                        onSelect={() => handleExistingClauseSelection(clause)}
-                      >
-                        {clause.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            <Button onClick={() => setIsAddingNewClause(true)}>Add New Clause</Button>
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Clause</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isCreatingNewGroup 
-                ? renderClauses(newGroup.clauses)
-                : selectedGroup && renderClauses(selectedGroup.clauses)}
-            </TableBody>
-          </Table>
-
-          {isAddingNewClause && (
-            <div className="mt-4">
-              <Input
-                placeholder="New Clause Name"
-                value={newClause.name}
-                onChange={(e) => setNewClause({ ...newClause, name: e.target.value })}
-                className="mb-2"
-              />
-              <Textarea
-                placeholder="New Clause Description"
-                value={newClause.description}
-                onChange={(e) => setNewClause({ ...newClause, description: e.target.value })}
-                className="mb-2"
-              />
-              <Button onClick={handleAddNewClause}>Add New Clause</Button>
-            </div>
-          )}
-        </div>
+        <GroupClauses
+          isCreatingNewGroup={isCreatingNewGroup}
+          selectedGroup={selectedGroup}
+          newGroup={newGroup}
+          newClause={newClause}
+          allClauses={getAvailableClauses()} // Use the filtered clauses here
+          isAddingNewClause={isAddingNewClause}
+          setNewGroup={setNewGroup}
+          setNewClause={setNewClause}
+          setIsAddingNewClause={setIsAddingNewClause}
+          handleAddNewClause={handleAddNewClause}
+          handleExistingClauseSelection={handleExistingClauseSelection}
+          handleRemoveClauseFromGroup={handleRemoveClauseFromGroup}
+          handleGenerateDescription={handleGenerateDescription}
+          isGeneratingDescription={isGeneratingDescription}
+        />
       )}
+
+      <ManageClauses
+        clauses={clauses}
+        handleEditClause={handleEditClause}
+        handleDeleteClause={handleDeleteClause}
+        isEditingClause={isEditingClause}
+        selectedClause={selectedClause}
+        setSelectedClause={setSelectedClause}
+        setIsEditingClause={setIsEditingClause}
+        handleSaveEditedClause={handleSaveEditedClause}
+      />
     </div>
   )
 }

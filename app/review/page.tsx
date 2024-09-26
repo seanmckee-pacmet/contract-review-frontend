@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, Trash2, Settings } from "lucide-react"
 import Link from 'next/link'
 
-const API_BASE_URL = "http://localhost:8000/documents"
+const API_DOCUMENT_URL = "http://localhost:8000/documents"
+const API_REVIEW_CRITERIA_URL = "http://localhost:8000/review_criteria"
 
 type Clause = {
   id: string
@@ -19,13 +20,18 @@ type Clause = {
   description: string
 }
 
+type ReviewCriteriaGroup = {
+  id: string
+  name: string
+  clauses: Clause[]
+}
+
 type Review = {
   id: string
   company: string
   files: string[]
   purchaseOrder: File | null
-  reviewType: 'general' | 'custom'
-  clauses: Clause[]
+  reviewCriteriaGroup: ReviewCriteriaGroup | null
 }
 
 type Company = {
@@ -44,16 +50,17 @@ export default function ContractReviewPage() {
     company: '', 
     files: [], 
     purchaseOrder: null, 
-    reviewType: 'general', 
-    clauses: [] 
+    reviewCriteriaGroup: null
   }])
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
   const [reviewResults, setReviewResults] = useState<any>(null)
   const [companies, setCompanies] = useState<Company[]>([])
   const [documents, setDocuments] = useState<Record<string, Document[]>>({})
+  const [reviewCriteriaGroups, setReviewCriteriaGroups] = useState<ReviewCriteriaGroup[]>([])
 
   useEffect(() => {
     fetchCompanies()
+    fetchReviewCriteriaGroups()
   }, [])
 
   useEffect(() => {
@@ -64,7 +71,7 @@ export default function ContractReviewPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/companies`)
+      const response = await axios.get(`${API_DOCUMENT_URL}/companies`)
       setCompanies(response.data.data || [])
     } catch (error) {
       console.error("Error fetching companies:", error)
@@ -73,7 +80,7 @@ export default function ContractReviewPage() {
 
   const fetchDocuments = async (companyId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${companyId}`)
+      const response = await axios.get(`${API_DOCUMENT_URL}/${companyId}`)
       setDocuments(prevDocuments => ({
         ...prevDocuments,
         [companyId]: response.data.data
@@ -83,14 +90,22 @@ export default function ContractReviewPage() {
     }
   }
 
+  const fetchReviewCriteriaGroups = async () => {
+    try {
+      const response = await axios.get(`${API_REVIEW_CRITERIA_URL}/criteria_groups`)
+      setReviewCriteriaGroups(response.data.criteria_groups || [])
+    } catch (error) {
+      console.error("Error fetching review criteria groups:", error)
+    }
+  }
+
   const addReview = () => {
     setReviews([...reviews, { 
       id: Date.now().toString(), 
       company: '', 
       files: [], 
       purchaseOrder: null, 
-      reviewType: 'general', 
-      clauses: [] 
+      reviewCriteriaGroup: null
     }])
     setCurrentReviewIndex(reviews.length)
   }
@@ -169,10 +184,9 @@ export default function ContractReviewPage() {
             
             <div className="flex items-center justify-between mb-6">
               <ReviewTypeSelection 
-                onSelectType={(type) => updateReview('reviewType', type)} 
-                onCustomClausesChange={(clauses) => updateReview('clauses', clauses)}
-                currentType={reviews[currentReviewIndex].reviewType}
-                currentClauses={reviews[currentReviewIndex].clauses}
+                onSelectGroup={(group) => updateReview('reviewCriteriaGroup', group)} 
+                currentGroup={reviews[currentReviewIndex].reviewCriteriaGroup}
+                groups={reviewCriteriaGroups}
               />
               <Link href="/review-criteria">
                 <Button variant="outline">
