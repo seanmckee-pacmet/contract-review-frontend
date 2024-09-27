@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import { NavbarProvider } from '@/contexts/NavbarContext';
+import Navbar from '@/components/Navbar';
+import MainContent from '@/components/MainContent';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,18 +12,14 @@ export const metadata: Metadata = {
   description: "AI-powered contract management and analysis",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Navbar />
-        <main className="ml-64 p-4"> {/* Add this line */}
-          {children}
-        </main>
+        <NavbarProvider>
+          <Navbar />
+          <MainContent>{children}</MainContent>
+        </NavbarProvider>
       </body>
     </html>
   );

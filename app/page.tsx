@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash2, Upload, Plus } from "lucide-react"
+import { Trash2, Upload, Plus, Clipboard } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import Link from "next/link"
 
 // Define types for our data structures
 type Document = {
@@ -28,7 +29,7 @@ type Documents = {
   [company: string]: Document[];
 };
 
-const API_BASE_URL = "http://localhost:8000/documents"  // Adjust this to match your backend URL
+const API_BASE_URL = "http://localhost:8000/documents"  
 
 export default function DocumentManagement() {
   const [selectedCompany, setSelectedCompany] = useState("")
@@ -277,7 +278,7 @@ export default function DocumentManagement() {
                 <TableRow>
                   <TableHead>Document Name</TableHead>
                   <TableHead>Document Type</TableHead>
-                  <TableHead>Action</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -286,9 +287,16 @@ export default function DocumentManagement() {
                     <TableCell>{doc.name}</TableCell>
                     <TableCell>{doc.doc_type}</TableCell>
                     <TableCell>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeleteDocument(doc.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteDocument(doc.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Link href={`/manual-onboarding/${doc.id}`} passHref>
+                          <Button variant="outline" size="sm">
+                            <Clipboard className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
