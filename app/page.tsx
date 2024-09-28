@@ -184,7 +184,8 @@ export default function DocumentManagement() {
       <Card>
         <CardHeader>
           <CardTitle>Document Management</CardTitle>
-          <CardDescription>Manage documents for contract review</CardDescription>
+          <CardDescription>Manage you supporting documents such as Quality Documents and Terms and Conditions</CardDescription>
+          <CardDescription> (upload your purchase order when creating a new review).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -249,13 +250,14 @@ export default function DocumentManagement() {
 
           {selectedCompany && (
             <div className="space-y-2">
-              <Label htmlFor="file-upload">Upload Document for {selectedCompany}</Label>
+              <Label htmlFor="file-upload">Upload PDF Document for {selectedCompany}</Label>
               <div className="flex items-center space-x-2">
                 <Input
                   id="file-upload"
                   type="file"
                   onChange={handleFileUpload}
                   disabled={isLoading}
+                  accept=".pdf, .tif, .tiff"
                 />
                 <Button disabled={isLoading}>
                   <Upload className="mr-2 h-4 w-4" />

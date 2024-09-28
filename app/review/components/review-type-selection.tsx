@@ -1,3 +1,4 @@
+import React from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type Clause = {
@@ -19,22 +20,18 @@ type ReviewTypeSelectionProps = {
 }
 
 export function ReviewTypeSelection({ onSelectGroup, currentGroup, groups }: ReviewTypeSelectionProps) {
+  const handleSelectChange = (value: string) => {
+    const selectedGroup = groups.find(group => group.id === value)
+    if (selectedGroup) {
+      onSelectGroup(selectedGroup)
+    }
+  }
+
   return (
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Review Criteria Group
-      </label>
-      <Select 
-        onValueChange={(value) => {
-          const selectedGroup = groups.find(g => g.id === value);
-          if (selectedGroup) {
-            onSelectGroup(selectedGroup);
-          }
-        }} 
-        value={currentGroup?.id || ""}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a review criteria group" />
+    <div className="w-full max-w-xs">
+      <Select onValueChange={handleSelectChange} value={currentGroup?.id || ""}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a review type" />
         </SelectTrigger>
         <SelectContent>
           {groups.map((group) => (

@@ -1,62 +1,39 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
+import React from 'react'
+
+type Clause = {
+  id: string
+  name: string
+  description: string
+  relevantChunks?: string[]
+}
 
 type ReviewResult = {
-  id: string
-  company: string
-  clauses: {
-    name: string
-    quotes: string[]
-  }[]
+  clauses: Clause[]
 }
 
 type ReviewResultsProps = {
-  results: ReviewResult[]
+  results: ReviewResult
 }
 
 export function ReviewResults({ results }: ReviewResultsProps) {
-  const [expandedReview, setExpandedReview] = useState<string | null>(null)
-
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Review Results</h2>
-      {results.map((result) => (
-        <Card key={result.id}>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>{result.company}</span>
-              <Button
-                onClick={() => setExpandedReview(expandedReview === result.id ? null : result.id)}
-                variant="outline"
-              >
-                {expandedReview === result.id ? 'Collapse' : 'Expand'}
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {expandedReview === result.id && (
-              <Accordion type="single" collapsible className="w-full">
-                {result.clauses.map((clause, index) => (
-                  <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger>{clause.name}</AccordionTrigger>
-                    <AccordionContent>
-                      <ul className="list-disc list-inside space-y-2">
-                        {clause.quotes.map((quote, quoteIndex) => (
-                          <li key={quoteIndex} className="text-sm text-gray-600">
-                            {quote}
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
+    <div className="mt-8 bg-white rounded-lg shadow-xl overflow-hidden">
+      <div className="px-6 py-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Results</h2>
+        {results.clauses.map((clause) => (
+          <div key={clause.id} className="mb-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">{clause.name}</h3>
+            <p className="text-gray-600 mb-2">{clause.description}</p>
+            {clause.relevantChunks && clause.relevantChunks.length > 0 && (
+              <ul className="list-disc pl-6">
+                {clause.relevantChunks.map((chunk, chunkIndex) => (
+                  <li key={`${clause.id}-chunk-${chunkIndex}`} className="text-gray-600 mb-2">{chunk}</li>
                 ))}
-              </Accordion>
+              </ul>
             )}
-          </CardContent>
-        </Card>
-      ))}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

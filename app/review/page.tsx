@@ -8,21 +8,27 @@ import { PurchaseOrderUpload } from './components/purchase-order-upload'
 import { ReviewTypeSelection } from './components/review-type-selection'
 import { ReviewResults } from './components/review-results'
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Trash2, Settings } from "lucide-react"
+import { PlusCircle, Trash2, Settings, Loader2 } from "lucide-react"
 import Link from 'next/link'
 
 const API_DOCUMENT_URL = "http://localhost:8000/documents"
 const API_REVIEW_CRITERIA_URL = "http://localhost:8000/review_criteria"
 
+// Unified type definitions
 type Clause = {
   id: string
   name: string
   description: string
+  relevantChunks?: string[]
 }
 
 type ReviewCriteriaGroup = {
   id: string
   name: string
+  clauses: Clause[]
+}
+
+type ReviewResult = {
   clauses: Clause[]
 }
 
@@ -53,10 +59,11 @@ export default function ContractReviewPage() {
     reviewCriteriaGroup: null
   }])
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
-  const [reviewResults, setReviewResults] = useState<any>(null)
+  const [reviewResults, setReviewResults] = useState<ReviewResult | null>(null)
   const [companies, setCompanies] = useState<Company[]>([])
   const [documents, setDocuments] = useState<Record<string, Document[]>>({})
   const [reviewCriteriaGroups, setReviewCriteriaGroups] = useState<ReviewCriteriaGroup[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     fetchCompanies()
@@ -127,9 +134,24 @@ export default function ContractReviewPage() {
     }
   }
 
-  const handleSubmit = () => {
-    // TODO: Implement actual API call for submitting review
-    console.log("Submitting review:", reviews[currentReviewIndex])
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true) // Set loading to true when starting the review
+      const response = await axios.post<ReviewResult>(`http://localhost:8000/reviews/review`, {
+        ids: reviews[currentReviewIndex].files
+      }, {
+        params: {
+          review_criteria_group_id: reviews[currentReviewIndex].reviewCriteriaGroup?.id
+        }
+      })
+      setReviewResults(response.data)
+      console.log("Review results:", response.data)
+    } catch (error) {
+      console.error("Error submitting review:", error)
+      // Handle error (e.g., show an error message to the user)
+    } finally {
+      setIsLoading(false) // Set loading to false when the review is complete
+    }
   }
 
   return (
@@ -176,11 +198,11 @@ export default function ContractReviewPage() {
               selectedFiles={reviews[currentReviewIndex].files}
               availableFiles={documents[reviews[currentReviewIndex].company] || []}
             />
-            
+{/*             
             <PurchaseOrderUpload 
               onUpload={(file) => updateReview('purchaseOrder', file)} 
               currentFile={reviews[currentReviewIndex].purchaseOrder}
-            />
+            /> */}
             
             <div className="flex items-center justify-between mb-6">
               <ReviewTypeSelection 
@@ -206,6 +228,16 @@ export default function ContractReviewPage() {
         
         {reviewResults && (
           <ReviewResults results={reviewResults} />
+        )}
+        
+        {isLoading && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+              <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
+              <p className="text-lg font-semibold text-gray-700">Processing Review...</p>
+              <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
+            </div>
+          </div>
         )}
       </div>
     </div>

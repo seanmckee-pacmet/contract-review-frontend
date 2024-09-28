@@ -33,7 +33,7 @@ export function PurchaseOrderUpload({ onUpload }: PurchaseOrderUploadProps) {
           id="purchase-order"
           type="file"
           onChange={handleFileChange}
-          accept=".pdf,.doc,.docx"
+          accept=".pdf,.tiff,.tif "
           className="hidden"
         />
         <Button
