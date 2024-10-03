@@ -2,14 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { File, TableOfContents, MessageSquare, Brain, PanelLeftOpen, PanelRightOpen } from 'lucide-react';
+import { File, TableOfContents, MessageSquare, Brain, PanelLeftOpen, PanelRightOpen, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useNavbar } from '@/contexts/NavbarContext';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const pathname = usePathname();
   const { isExpanded, setIsExpanded } = useNavbar();
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   const navItems = [
     { name: 'Manage Docs', href: '/', icon: File },
@@ -43,7 +52,7 @@ const Navbar = () => {
           {isExpanded ? <PanelLeftOpen className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
         </Button>
       </div>
-      <ul className="space-y-2 mt-2">
+      <ul className="space-y-2 mt-2 flex-grow">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -72,6 +81,25 @@ const Navbar = () => {
           );
         })}
       </ul>
+      <div className="mt-auto mb-4">
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className={cn(
+            "w-full justify-start",
+            isExpanded ? "px-4" : "px-0"
+          )}
+        >
+          <div className={cn("flex items-center justify-center", isExpanded ? "w-6" : "w-16")}>
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+          </div>
+          {isExpanded && (
+            <span className="ml-2 transition-all duration-300">
+              Logout
+            </span>
+          )}
+        </Button>
+      </div>
     </nav>
   );
 };
