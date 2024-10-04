@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,17 +39,6 @@ export default function DocumentManagement() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    fetchCompanies()
-  }, [])
-
-  useEffect(() => {
-    if (selectedCompany) {
-      fetchDocuments(selectedCompany)
-      console.log("documents", documents)
-    }
-  }, [selectedCompany])
-
   const fetchCompanies = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/companies`)
@@ -63,29 +52,43 @@ export default function DocumentManagement() {
     }
   }
 
-  // maybe pass companyID instead of companyName
-  const fetchDocuments = async (companyName: string) => {
-    try {
-      const company = companies.find(company => company.name === companyName);
-      if (!company) {
-        throw new Error("Company not found");
+    // maybe pass companyID instead of companyName
+    const fetchDocuments = useCallback(async (companyName: string) => {
+      try {
+        const company = companies.find(company => company.name === companyName);
+        if (!company) {
+          throw new Error("Company not found");
+        }
+        const response = await axios.get(`${API_BASE_URL}/${company.id}`);
+        console.log("response", response.data);
+        setDocuments(prevDocuments => ({
+          ...prevDocuments,
+          [companyName]: response.data.data
+        }));
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+        setError("Failed to fetch documents");
       }
-      const response = await axios.get(`${API_BASE_URL}/${company.id}`);
-      console.log("response", response.data);
-      setDocuments(prevDocuments => ({
-        ...prevDocuments,
-        [companyName]: response.data.data
-      }));
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      setError("Failed to fetch documents");
+    }, [companies]);
+
+  useEffect(() => {
+    fetchCompanies()
+  }, [])
+
+  useEffect(() => {
+    if (selectedCompany) {
+      fetchDocuments(selectedCompany)
     }
-  }
+  }, [selectedCompany, fetchDocuments])
+
+ 
+
+
 
   const handleCompanyCreate = async () => {
     if (newCompanyName && (!companies || !companies.some(company => company.name === newCompanyName))) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/company`, null, {
+        await axios.post(`${API_BASE_URL}/company`, null, {
           params: { company_name: newCompanyName }
         })
         fetchCompanies()
@@ -107,8 +110,9 @@ export default function DocumentManagement() {
       setCompanies(companies.filter(company => company.id !== companyId))
       const companyName = companies.find(company => company.id === companyId)?.name
       if (companyName) {
-        const { [companyName]: _, ...remainingDocuments } = documents
-        setDocuments(remainingDocuments)
+        const newDocuments = { ...documents }
+        delete newDocuments[companyName]
+        setDocuments(newDocuments)
         if (selectedCompany === companyName) {
           setSelectedCompany("")
         }

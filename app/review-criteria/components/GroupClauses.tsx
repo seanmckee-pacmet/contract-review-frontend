@@ -35,7 +35,6 @@ interface GroupClausesProps {
   newClause: Clause
   allClauses: Clause[]
   isAddingNewClause: boolean
-  setNewGroup: (group: CriteriaGroup) => void
   setNewClause: (clause: Clause) => void
   setIsAddingNewClause: (isAdding: boolean) => void
   handleAddNewClause: () => void
@@ -52,7 +51,6 @@ const GroupClauses: React.FC<GroupClausesProps> = ({
   newClause,
   allClauses,
   isAddingNewClause,
-  setNewGroup,
   setNewClause,
   setIsAddingNewClause,
   handleAddNewClause,

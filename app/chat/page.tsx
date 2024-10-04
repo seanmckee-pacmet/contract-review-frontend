@@ -33,7 +33,6 @@ export default function DocumentChatPage() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai'; content: string }[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const chatEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

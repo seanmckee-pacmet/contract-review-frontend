@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { CompanySelect } from './components/company-select'
 import { FileSelection } from './components/file-selection'
-import { PurchaseOrderUpload } from './components/purchase-order-upload'
 import { ReviewTypeSelection } from './components/review-type-selection'
 import { ReviewResults } from './components/review-results'
 import { Button } from "@/components/ui/button"
@@ -49,6 +48,8 @@ type Document = {
   id: string
   name: string
 }
+
+type ReviewFieldValue = string | string[] | File | null | ReviewCriteriaGroup | null;
 
 export default function ContractReviewPage() {
   const [reviews, setReviews] = useState<Review[]>([{ 
@@ -123,7 +124,7 @@ export default function ContractReviewPage() {
     setCurrentReviewIndex(Math.min(currentReviewIndex, newReviews.length - 1))
   }
 
-  const updateReview = (field: keyof Review, value: any) => {
+  const updateReview = (field: keyof Review, value: ReviewFieldValue) => {
     const updatedReviews = [...reviews]
     updatedReviews[currentReviewIndex] = { ...updatedReviews[currentReviewIndex], [field]: value }
     setReviews(updatedReviews)

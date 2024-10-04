@@ -8,7 +8,6 @@ import ManageClauses from './components/ManageClauses'
 import { CriteriaGroup, Clause } from './types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2 } from "lucide-react"
 
 const API_BASE_URL = "http://localhost:8000/review_criteria"  // Adjust this to match your backend URL
 
@@ -21,7 +20,6 @@ export default function ReviewCriteriaManager() {
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false)
   const [isAddingNewClause, setIsAddingNewClause] = useState(false)
   const [groupToDelete, setGroupToDelete] = useState<CriteriaGroup | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [clauses, setClauses] = useState<Clause[]>([])
   const [selectedClause, setSelectedClause] = useState<Clause | null>(null)
   const [isEditingClause, setIsEditingClause] = useState(false)
@@ -33,7 +31,6 @@ export default function ReviewCriteriaManager() {
   }, [])
 
   const fetchAllCriteriaGroupsAndClauses = async () => {
-    setIsLoading(true)
     try {
       const response = await axios.get(`${API_BASE_URL}/criteria_groups/all`)
       console.log('Fetched all criteria groups and clauses:', response.data.criteria_groups)
@@ -41,13 +38,10 @@ export default function ReviewCriteriaManager() {
     } catch (error) {
       console.error('Error fetching all criteria groups and clauses:', error)
       setCriteriaGroups([])
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const fetchAllClauses = async () => {
-    setIsLoading(true)
     try {
       const response = await axios.get(`${API_BASE_URL}/clauses`)
       console.log('Fetched all clauses:', response.data.clauses)
@@ -57,8 +51,6 @@ export default function ReviewCriteriaManager() {
       console.error('Error fetching all clauses:', error)
       setAllClauses([])
       setClauses([])
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -306,7 +298,6 @@ export default function ReviewCriteriaManager() {
         handleCreateNewGroup={handleCreateNewGroup}
         handleDeleteGroup={handleDeleteGroup}
         setGroupToDelete={setGroupToDelete}
-        groupToDelete={groupToDelete}
       />
 
       {isCreatingNewGroup && (
@@ -330,7 +321,6 @@ export default function ReviewCriteriaManager() {
           newClause={newClause}
           allClauses={getAvailableClauses()} // Use the filtered clauses here
           isAddingNewClause={isAddingNewClause}
-          setNewGroup={setNewGroup}
           setNewClause={setNewClause}
           setIsAddingNewClause={setIsAddingNewClause}
           handleAddNewClause={handleAddNewClause}

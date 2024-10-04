@@ -25,11 +25,7 @@ export default function ManualOnboarding() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    fetchChunks()
-  }, [])
-
-  const fetchChunks = async () => {
+  const fetchChunks = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/${params.id}/chunks`)
       setChunks(response.data.data)
@@ -39,7 +35,11 @@ export default function ManualOnboarding() {
       setError("Failed to fetch document chunks")
       setLoading(false)
     }
-  }
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchChunks();
+  }, [fetchChunks]);
 
   const handleHeaderUpdate = async (chunkId: string, header: string) => {
     try {

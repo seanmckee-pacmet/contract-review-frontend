@@ -19,7 +19,6 @@ interface CriteriaGroupDropdownProps {
   handleCreateNewGroup: () => void
   handleDeleteGroup: () => void
   setGroupToDelete: (group: CriteriaGroup | null) => void
-  groupToDelete: CriteriaGroup | null
 }
 
 const CriteriaGroupDropdown: React.FC<CriteriaGroupDropdownProps> = ({
@@ -29,7 +28,6 @@ const CriteriaGroupDropdown: React.FC<CriteriaGroupDropdownProps> = ({
   handleCreateNewGroup,
   handleDeleteGroup,
   setGroupToDelete,
-  groupToDelete
 }) => {
   return (
     <div className="flex space-x-4 mb-6">
@@ -68,7 +66,7 @@ const CriteriaGroupDropdown: React.FC<CriteriaGroupDropdownProps> = ({
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete the
-                "{selectedGroup.name}" group and all its clauses.
+                &ldquo;{selectedGroup.name}&rdquo; group and all its clauses.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
