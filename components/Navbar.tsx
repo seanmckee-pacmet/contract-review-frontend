@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { File, TableOfContents, MessageSquare, Brain, PanelLeftOpen, PanelRightOpen, LogOut } from 'lucide-react';
+import { File, TableOfContents, MessageSquare, PanelLeftOpen, PanelRightOpen, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useNavbar } from '@/contexts/NavbarContext';
