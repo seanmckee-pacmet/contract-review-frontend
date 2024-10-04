@@ -89,7 +89,7 @@ export default function DocumentChatPage() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`${BASE_URL}/chat`, null, {
+      const response = await axios.post(`${BASE_URL}`, null, {
         params: {
           query: inputMessage,
           document_ids: selectedDocuments.map(doc => doc.id).join(',')
