@@ -27,7 +27,7 @@ export default function ManualOnboarding() {
 
   const fetchChunks = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${params.id}/chunks`)
+      const response = await axios.get(`${process.env.BASE_URL}/api/chunks/${params.id}`)
       setChunks(response.data.data)
       setLoading(false)
     } catch (error) {
@@ -43,7 +43,7 @@ export default function ManualOnboarding() {
 
   const handleHeaderUpdate = async (chunkId: string, header: string) => {
     try {
-      await axios.put(`${API_BASE_URL}/chunk/${chunkId}`, { header })
+      await axios.put(`${process.env.BASE_URL}/api/chunk/${chunkId}`, { header })
       setError("")
     } catch (error) {
       console.error("Error updating chunk header:", error)
