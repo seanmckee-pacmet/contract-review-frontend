@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, Trash2, Settings, Loader2 } from "lucide-react"
 import Link from 'next/link'
 
-const API_DOCUMENT_URL = "http://localhost:8000/documents"
-const API_REVIEW_CRITERIA_URL = "http://localhost:8000/review_criteria"
+// Replace these constants with the environment variable
+const API_DOCUMENT_URL = `${process.env.BASE_URL}/documents`
+const API_REVIEW_CRITERIA_URL = `${process.env.BASE_URL}/review_criteria`
 
 // Unified type definitions
 type Clause = {
@@ -138,7 +139,7 @@ export default function ContractReviewPage() {
   const handleSubmit = async () => {
     try {
       setIsLoading(true) // Set loading to true when starting the review
-      const response = await axios.post<ReviewResult>(`http://localhost:8000/reviews/review`, {
+      const response = await axios.post<ReviewResult>(`${process.env.BASE_URL}/reviews/review`, {
         ids: reviews[currentReviewIndex].files
       }, {
         params: {

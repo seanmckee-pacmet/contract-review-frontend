@@ -29,7 +29,6 @@ type Documents = {
   [company: string]: Document[];
 };
 
-const API_BASE_URL = "http://localhost:8000/documents"  
 
 export default function DocumentManagement() {
   const [selectedCompany, setSelectedCompany] = useState("")
@@ -41,7 +40,7 @@ export default function DocumentManagement() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/companies`)
+      const response = await axios.get(`${process.env.BASE_URL}/companies`)
       // Extract the data array from the response
       const companiesData = response.data.data || []
       setCompanies(companiesData)
@@ -59,7 +58,7 @@ export default function DocumentManagement() {
         if (!company) {
           throw new Error("Company not found");
         }
-        const response = await axios.get(`${API_BASE_URL}/${company.id}`);
+        const response = await axios.get(`${process.env.BASE_URL}/${company.id}`);
         console.log("response", response.data);
         setDocuments(prevDocuments => ({
           ...prevDocuments,
@@ -88,11 +87,10 @@ export default function DocumentManagement() {
   const handleCompanyCreate = async () => {
     if (newCompanyName && (!companies || !companies.some(company => company.name === newCompanyName))) {
       try {
-        await axios.post(`${API_BASE_URL}/company`, null, {
+        await axios.post(`${process.env.BASE_URL}/company`, null, {
           params: { company_name: newCompanyName }
         })
         fetchCompanies()
-        setNewCompanyName("")
         setNewCompanyName("")
         setError("")
       } catch (error) {
@@ -106,7 +104,7 @@ export default function DocumentManagement() {
 
   const handleCompanyDelete = async (companyId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/company/${companyId}`)
+      await axios.delete(`${process.env.BASE_URL}/company/${companyId}`)
       setCompanies(companies.filter(company => company.id !== companyId))
       const companyName = companies.find(company => company.id === companyId)?.name
       if (companyName) {
@@ -137,7 +135,7 @@ export default function DocumentManagement() {
         }
 
         const response = await axios.post(
-          `${API_BASE_URL}/upload/${company.id}`,
+          `${process.env.BASE_URL}/upload/${company.id}`,
           formData,
           {
             headers: {
@@ -172,7 +170,7 @@ export default function DocumentManagement() {
 
   const handleDeleteDocument = async (docId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/document/${docId}`)
+      await axios.delete(`${process.env.BASE_URL}/document/${docId}`)
       setDocuments(prevDocuments => ({
         ...prevDocuments,
         [selectedCompany]: prevDocuments[selectedCompany].filter(doc => doc.id !== String(docId))

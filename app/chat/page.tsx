@@ -22,9 +22,6 @@ type Document = {
   content: string
 }
 
-const API_BASE_URL = "http://localhost:8000/documents"
-const API_CHAT_URL = "http://localhost:8000/chat"
-
 export default function DocumentChatPage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
@@ -47,7 +44,7 @@ export default function DocumentChatPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/companies`)
+      const response = await axios.get(`${process.env.BASE_URL}/companies`)
       setCompanies(response.data.data || [])
     } catch (error) {
       console.error("Error fetching companies:", error)
@@ -56,7 +53,7 @@ export default function DocumentChatPage() {
 
   const fetchDocuments = async (companyId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${companyId}`)
+      const response = await axios.get(`${process.env.BASE_URL}/${companyId}`)
       setDocuments(prevDocuments => ({
         ...prevDocuments,
         [companyId]: response.data.data
@@ -89,7 +86,7 @@ export default function DocumentChatPage() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(API_CHAT_URL, null, {
+      const response = await axios.post(`${process.env.BASE_URL}/chat`, null, {
         params: {
           query: inputMessage,
           document_ids: selectedDocuments.map(doc => doc.id).join(',')

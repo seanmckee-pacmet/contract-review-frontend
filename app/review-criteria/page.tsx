@@ -9,7 +9,6 @@ import { CriteriaGroup, Clause } from './types'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-const API_BASE_URL = "http://localhost:8000/review_criteria"  // Adjust this to match your backend URL
 
 export default function ReviewCriteriaManager() {
   const [criteriaGroups, setCriteriaGroups] = useState<CriteriaGroup[]>([])
@@ -32,7 +31,7 @@ export default function ReviewCriteriaManager() {
 
   const fetchAllCriteriaGroupsAndClauses = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/criteria_groups/all`)
+      const response = await axios.get(`${process.env.BASE_URL}/criteria_groups/all`)
       console.log('Fetched all criteria groups and clauses:', response.data.criteria_groups)
       setCriteriaGroups(response.data.criteria_groups || [])
     } catch (error) {
@@ -43,7 +42,7 @@ export default function ReviewCriteriaManager() {
 
   const fetchAllClauses = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/clauses`)
+      const response = await axios.get(`${process.env.BASE_URL}/clauses`)
       console.log('Fetched all clauses:', response.data.clauses)
       setAllClauses(response.data.clauses || [])
       setClauses(response.data.clauses || [])  // Set clauses for management
@@ -69,7 +68,7 @@ export default function ReviewCriteriaManager() {
   const handleAddGroup = async () => {
     if (newGroup.name) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/criteria_groups`, null, { params: { name: newGroup.name } })
+        const response = await axios.post(`${process.env.BASE_URL}/criteria_groups`, null, { params: { name: newGroup.name } })
         const createdGroup = response.data.criteria_group
         setCriteriaGroups([...criteriaGroups, createdGroup])
         setSelectedGroup(createdGroup)
@@ -84,7 +83,7 @@ export default function ReviewCriteriaManager() {
   const handleAddNewClause = async () => {
     if (newClause.name && newClause.description) {
       try {
-        const response = await axios.post(`${API_BASE_URL}/criteria_groups/${selectedGroup?.id}/clauses`, null, {
+        const response = await axios.post(`${process.env.BASE_URL}/criteria_groups/${selectedGroup?.id}/clauses`, null, {
           params: {
             name: newClause.name,
             description: newClause.description,
@@ -123,7 +122,7 @@ export default function ReviewCriteriaManager() {
 
   const handleDeleteClause = async (clauseId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/clauses/${clauseId}`)
+      await axios.delete(`${process.env.BASE_URL}/clauses/${clauseId}`)
       // Remove clause from clauses state
       setClauses(prevClauses => prevClauses.filter(c => c.id !== clauseId))
       // Remove clause from allClauses if needed
@@ -158,7 +157,7 @@ export default function ReviewCriteriaManager() {
     if (clause) {
       if (selectedGroup) {
         try {
-          await axios.post(`${API_BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clause.id}`)
+          await axios.post(`${process.env.BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clause.id}`)
           const updatedGroups = criteriaGroups.map(g => 
             g.id === selectedGroup.id 
               ? { ...g, clauses: [...(g.clauses || []), clause] }
@@ -184,7 +183,7 @@ export default function ReviewCriteriaManager() {
   const handleDeleteGroup = async () => {
     if (groupToDelete) {
       try {
-        await axios.delete(`${API_BASE_URL}/criteria_groups/${groupToDelete.id}`)
+        await axios.delete(`${process.env.BASE_URL}/criteria_groups/${groupToDelete.id}`)
         setCriteriaGroups(prevGroups => prevGroups.filter(g => g.id !== groupToDelete.id))
         if (selectedGroup && selectedGroup.id === groupToDelete.id) {
           setSelectedGroup(null)
@@ -205,7 +204,7 @@ export default function ReviewCriteriaManager() {
   const handleSaveEditedClause = async () => {
     if (selectedClause) {
       try {
-        await axios.put(`${API_BASE_URL}/clauses/${selectedClause.id}`, null, {
+        await axios.put(`${process.env.BASE_URL}/clauses/${selectedClause.id}`, null, {
           params: {
             name: selectedClause.name,
             description: selectedClause.description,
@@ -246,7 +245,7 @@ export default function ReviewCriteriaManager() {
   const handleRemoveClauseFromGroup = async (clauseId: string) => {
     if (selectedGroup) {
       try {
-        await axios.delete(`${API_BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clauseId}`)
+        await axios.delete(`${process.env.BASE_URL}/criteria_groups/${selectedGroup.id}/clauses/${clauseId}`)
         setSelectedGroup(prevGroup => ({
           ...prevGroup!,
           clauses: prevGroup!.clauses.filter(c => c.id !== clauseId)
@@ -272,7 +271,7 @@ export default function ReviewCriteriaManager() {
     if (newClause.name) {
       setIsGeneratingDescription(true)
       try {
-        const response = await axios.post(`${API_BASE_URL}/clauses/generate_description`, null, {
+        const response = await axios.post(`${process.env.BASE_URL}/clauses/generate_description`, null, {
           params: { name: newClause.name }
         })
         setNewClause(prevClause => ({
