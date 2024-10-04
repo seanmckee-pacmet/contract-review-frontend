@@ -32,6 +32,9 @@ export default function DocumentChatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
+  const BASE_URL = process.env.BASE_URL + "/chat"
+  const BASE_URL_DOCUMENTS = process.env.BASE_URL + "/documents"
+
   useEffect(() => {
     fetchCompanies()
   }, [])
@@ -44,7 +47,7 @@ export default function DocumentChatPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await axios.get(`${process.env.BASE_URL}/companies`)
+      const response = await axios.get(`${BASE_URL_DOCUMENTS}/companies`)
       setCompanies(response.data.data || [])
     } catch (error) {
       console.error("Error fetching companies:", error)
@@ -53,7 +56,7 @@ export default function DocumentChatPage() {
 
   const fetchDocuments = async (companyId: string) => {
     try {
-      const response = await axios.get(`${process.env.BASE_URL}/${companyId}`)
+      const response = await axios.get(`${BASE_URL_DOCUMENTS}/${companyId}`)
       setDocuments(prevDocuments => ({
         ...prevDocuments,
         [companyId]: response.data.data
@@ -86,7 +89,7 @@ export default function DocumentChatPage() {
     setIsLoading(true)
 
     try {
-      const response = await axios.post(`${process.env.BASE_URL}/chat`, null, {
+      const response = await axios.post(`${BASE_URL}/chat`, null, {
         params: {
           query: inputMessage,
           document_ids: selectedDocuments.map(doc => doc.id).join(',')
