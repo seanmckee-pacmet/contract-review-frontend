@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'  // Add this import
 import { login } from './actions'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,12 +10,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()  // Add this line
 
   const handleSubmit = async (formData: FormData) => {
     const result = await login(formData)
     if (result?.error) {
       console.error(result.error)
       setError(result.error)
+    } else {
+      // If login is successful, navigate to the dashboard (or any other page)
+      router.push('/private/review')
     }
   }
 

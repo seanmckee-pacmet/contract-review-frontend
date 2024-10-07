@@ -1,316 +1,182 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback } from "react"
-import axios from "axios"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash2, Upload, Plus, Clipboard } from "lucide-react"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import Link from "next/link"
+import { ChatBubbleIcon, FileTextIcon, GearIcon } from "@radix-ui/react-icons"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
-// Define types for our data structures
-type Document = {
-  id: string;
-  company_id: string;
-  doc_type: string;
-  name: string;
-};
-
-type Company = {
-  id: string;  // Changed from number to string based on the example
-  name: string;
-};
-
-type Documents = {
-  [company: string]: Document[];
-};
-
-const BASE_URL = process.env.BASE_URL + "/documents"
-
-
-export default function DocumentManagement() {
-  const [selectedCompany, setSelectedCompany] = useState("")
-  const [newCompanyName, setNewCompanyName] = useState("")
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [documents, setDocuments] = useState<Documents>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-
-  const fetchCompanies = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/companies`)
-      // Extract the data array from the response
-      const companiesData = response.data.data || []
-      setCompanies(companiesData)
-    } catch (error) {
-      console.error("Error fetching companies:", error)
-      setError("Failed to fetch companies")
-      setCompanies([])
-    }
-  }
-
-    // maybe pass companyID instead of companyName
-    const fetchDocuments = useCallback(async (companyName: string) => {
-      try {
-        const company = companies.find(company => company.name === companyName);
-        if (!company) {
-          throw new Error("Company not found");
-        }
-        const response = await axios.get(`${BASE_URL}/${company.id}`);
-        console.log("response", response.data);
-        setDocuments(prevDocuments => ({
-          ...prevDocuments,
-          [companyName]: response.data.data
-        }));
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-        setError("Failed to fetch documents");
-      }
-    }, [companies]);
+export default function LandingPage() {
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    fetchCompanies()
+    setIsLoaded(true)
   }, [])
 
-  useEffect(() => {
-    if (selectedCompany) {
-      fetchDocuments(selectedCompany)
-    }
-  }, [selectedCompany, fetchDocuments])
-
- 
-
-
-
-  const handleCompanyCreate = async () => {
-    if (newCompanyName && (!companies || !companies.some(company => company.name === newCompanyName))) {
-      try {
-        await axios.post(`${BASE_URL}/company`, null, {
-          params: { company_name: newCompanyName }
-        })
-        fetchCompanies()
-        setNewCompanyName("")
-        setError("")
-      } catch (error) {
-        console.error("Error creating company:", error)
-        setError("Failed to create company")
-      }
-    } else {
-      setError("Company name is empty or already exists")
-    }
-  }
-
-  const handleCompanyDelete = async (companyId: string) => {
-    try {
-      await axios.delete(`${BASE_URL}/company/${companyId}`)
-      setCompanies(companies.filter(company => company.id !== companyId))
-      const companyName = companies.find(company => company.id === companyId)?.name
-      if (companyName) {
-        const newDocuments = { ...documents }
-        delete newDocuments[companyName]
-        setDocuments(newDocuments)
-        if (selectedCompany === companyName) {
-          setSelectedCompany("")
-        }
-      }
-    } catch (error) {
-      console.error("Error deleting company:", error)
-      setError("Failed to delete company")
-    }
-  }
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && selectedCompany) {
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-        const company = companies.find(c => c.name === selectedCompany);
-        if (!company) {
-          throw new Error("Selected company not found");
-        }
-
-        const response = await axios.post(
-          `${BASE_URL}/upload/${company.id}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        // Assuming the response includes the new document data
-        const newDocument: Document = {
-          id: response.data.id, // Make sure this is included in the response
-          name: response.data.name,
-          doc_type: response.data.doc_type,
-          company_id: company.id
-        };
-
-        setDocuments(prevDocuments => ({
-          ...prevDocuments,
-          [selectedCompany]: [...(prevDocuments[selectedCompany] || []), newDocument]
-        }));
-
-        setError("");
-      } catch (error) {
-        console.error("Error uploading document:", error);
-        setError("Failed to upload document");
-      } finally {
-        setIsLoading(false);
-        fetchDocuments(selectedCompany);
-      }
-    }
-  };
-
-  const handleDeleteDocument = async (docId: string) => {
-    try {
-      await axios.delete(`${BASE_URL}/document/${docId}`)
-      setDocuments(prevDocuments => ({
-        ...prevDocuments,
-        [selectedCompany]: prevDocuments[selectedCompany].filter(doc => doc.id !== String(docId))
-      }))
-    } catch (error) {
-      console.error("Error deleting document:", error)
-      setError("Failed to delete document")
-    }
-  }
-
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Document Management</CardTitle>
-          <CardDescription>Manage you supporting documents such as Quality Documents and Terms and Conditions</CardDescription>
-          <CardDescription> (upload your purchase order when creating a new review).</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="company-select">Select Company</Label>
-            <div className="flex items-center space-x-2">
-              <Select onValueChange={setSelectedCompany} value={selectedCompany}>
-                <SelectTrigger id="company-select" className="flex-grow">
-                  <SelectValue placeholder="Select a company" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.name}>
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedCompany && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" aria-label="Delete selected company">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure you want to delete {selectedCompany}?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the company and all associated documents.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => {
-                        const company = companies.find(c => c.name === selectedCompany)
-                        if (company) {
-                          handleCompanyDelete(company.id)
-                        }
-                      }}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-end space-x-2">
-            <div className="flex-grow space-y-2">
-              <Label htmlFor="new-company">Create New Company</Label>
-              <Input
-                id="new-company"
-                placeholder="Enter company name"
-                value={newCompanyName}
-                onChange={(e) => setNewCompanyName(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleCompanyCreate}>
-              <Plus className="mr-2 h-4 w-4" /> Create
-            </Button>
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          {selectedCompany && (
-            <div className="space-y-2">
-              <Label htmlFor="file-upload">Upload PDF Document for {selectedCompany}</Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  id="file-upload"
-                  type="file"
-                  onChange={handleFileUpload}
-                  disabled={isLoading}
-                  accept=".pdf, .tif, .tiff"
-                />
-                <Button disabled={isLoading}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {isLoading ? "Uploading..." : "Upload"}
+    <AnimatePresence>
+      {isLoaded && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col min-h-screen"
+        >
+          <header className="px-4 lg:px-6 h-14 flex items-center">
+            <Link className="flex items-center justify-center" href="#">
+              <FileTextIcon className="h-6 w-6 mr-2" />
+              <span className="font-bold">AeroContractReview</span>
+            </Link>
+            <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Sign In
                 </Button>
+              </Link>
+            </nav>
+          </header>
+          <main className="flex-1 flex flex-col">
+            <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 flex items-center justify-center">
+              <div className="container px-4 md:px-6 max-w-5xl">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="flex flex-col items-center space-y-4 text-center"
+                >
+                  <motion.div 
+                    animate={{ 
+                      y: [0, -10, 0],
+                      transition: {
+                        y: {
+                          repeat: Infinity,
+                          duration: 5,
+                          ease: "easeInOut",
+                        }
+                      }
+                    }}
+                    className="space-y-2"
+                  >
+                    <motion.h1 
+                      className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: 0.2 }}
+                    >
+                      Revolutionize Your Aerospace Contract Reviews
+                    </motion.h1>
+                    <motion.p 
+                      className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: 0.4 }}
+                    >
+                      Streamline your contract review process with our AI-powered platform tailored for the aerospace industry.
+                    </motion.p>
+                  </motion.div>
+                  <motion.div 
+                    className="space-x-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.6 }}
+                  >
+                    <Button>Request Access</Button>
+                    <Button variant="outline">Learn More</Button>
+                  </motion.div>
+                </motion.div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {selectedCompany && documents[selectedCompany] && documents[selectedCompany].length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Documents for {selectedCompany}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Document Name</TableHead>
-                  <TableHead>Document Type</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents[selectedCompany].map((doc: Document, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{doc.name}</TableCell>
-                    <TableCell>{doc.doc_type}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteDocument(doc.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        <Link href={`/manual-onboarding/${doc.id}`} passHref>
-                          <Button variant="outline" size="sm">
-                            <Clipboard className="h-4 w-4" />
-                          </Button>
-                        </Link>
+            </section>
+            <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <div className="container px-4 md:px-6 max-w-5xl">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-center mb-8">
+                  Key Features
+                </h2>
+                <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3">
+                  {[{
+                    icon: <GearIcon className="h-12 w-12 mb-4 text-primary" />,
+                    title: "Custom Review Criteria",
+                    description: "Tailor your contract review process to your specific needs and industry standards.",
+                  },
+                  {
+                    icon: <FileTextIcon className="h-12 w-12 mb-4 text-primary" />,
+                    title: "Comprehensive Analysis",
+                    description: "Get in-depth insights and analysis for every clause in your aerospace contracts.",
+                  },
+                  {
+                    icon: <ChatBubbleIcon className="h-12 w-12 mb-4 text-primary" />,
+                    title: "Document Chat",
+                    description: "Interact with your contracts through our AI-powered chat interface for quick information retrieval.",
+                  }].map((feature, index) => (
+                    <div
+                      key={index}
+                      className={`flex flex-col items-center text-center p-6 rounded-lg transition-all duration-300 ease-in-out ${
+                        hoveredFeature === index
+                          ? "transform -translate-y-2 shadow-lg bg-white dark:bg-gray-700"
+                          : "bg-transparent"
+                      }`}
+                      onMouseEnter={() => setHoveredFeature(index)}
+                      onMouseLeave={() => setHoveredFeature(null)}
+                    >
+                      <div className={`transition-transform duration-300 ${
+                        hoveredFeature === index ? "scale-110" : ""
+                      }`}>
+                        {feature.icon}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {feature.description}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+            <section className="w-full py-12 md:py-24 lg:py-32 flex items-center justify-center">
+              <div className="container px-4 md:px-6 max-w-5xl">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                      Ready to Transform Your Contract Review Process?
+                    </h2>
+                    <p className="mx-auto max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
+                      Request access to our exclusive platform and experience the future of aerospace contract reviews.
+                    </p>
+                  </div>
+                  <div className="w-full max-w-sm space-y-2">
+                    <form className="flex space-x-2">
+                      <Input
+                        className="max-w-lg flex-1"
+                        placeholder="Enter your work email"
+                        type="email"
+                      />
+                      <Button type="submit">Request Access</Button>
+                    </form>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      By requesting access, you agree to our terms of service and privacy policy.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </main>
+          <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              © 2024 AeroContractReview. All rights reserved.
+            </p>
+            <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+              <Link className="text-xs hover:underline underline-offset-4" href="#">
+                Terms of Service
+              </Link>
+              <Link className="text-xs hover:underline underline-offset-4" href="#">
+                Privacy
+              </Link>
+            </nav>
+          </footer>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   )
 }

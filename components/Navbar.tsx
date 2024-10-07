@@ -17,13 +17,13 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
   };
 
   const navItems = [
-    { name: 'Manage Docs', href: '/', icon: File },
-    { name: 'Review', href: '/review', icon: TableOfContents },
-    { name: 'Chat', href: '/chat', icon: MessageSquare },
+    { name: 'Manage Docs', href: '/private/document-manager', icon: File },
+    { name: 'Review', href: '/private/review', icon: TableOfContents },
+    { name: 'Chat', href: '/private/chat', icon: MessageSquare },
   ];
 
   const toggleNavbar = () => {
