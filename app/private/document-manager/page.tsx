@@ -188,8 +188,7 @@ export default function DocumentManagement() {
       <Card>
         <CardHeader>
           <CardTitle>Document Management</CardTitle>
-          <CardDescription>Manage you supporting documents such as Quality Documents and Terms and Conditions</CardDescription>
-          <CardDescription> (upload your purchase order when creating a new review).</CardDescription>
+          <CardDescription>Upload and manage your documents.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">

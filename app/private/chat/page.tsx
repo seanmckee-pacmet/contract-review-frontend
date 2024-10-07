@@ -45,6 +45,10 @@ export default function DocumentChatPage() {
     }
   }, [selectedCompany])
 
+  useEffect(() => {
+    scrollToBottom()
+  }, [chatHistory, isLoading])
+
   const fetchCompanies = async () => {
     try {
       const response = await axios.get(`${BASE_URL_DOCUMENTS}/companies`)
@@ -119,10 +123,6 @@ export default function DocumentChatPage() {
       chatContainerRef.current.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0
     }
   }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [chatHistory, isLoading])
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
