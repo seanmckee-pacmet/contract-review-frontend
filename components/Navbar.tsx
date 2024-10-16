@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { File, TableOfContents, MessageSquare, PanelLeftOpen, PanelRightOpen, LogOut, Check } from 'lucide-react';
+import { File, TableOfContents, MessageSquare, PanelLeftOpen, PanelRightOpen, LogOut, Check, ClipboardList } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useNavbar } from '@/contexts/NavbarContext';
@@ -24,7 +24,8 @@ const Navbar = () => {
     { name: 'Manage Docs', href: '/private/document-manager', icon: File },
     { name: 'Review', href: '/private/review', icon: TableOfContents },
     { name: 'Chat', href: '/private/chat', icon: MessageSquare },
-    { name: 'Manage Criteria', href: '/private/review-criteria', icon: Check }
+    { name: 'Manage Criteria', href: '/private/review-criteria', icon: Check },
+    { name: 'My Reviews', href: '/private/my-reviews', icon: ClipboardList }
   ];
 
   const toggleNavbar = () => {

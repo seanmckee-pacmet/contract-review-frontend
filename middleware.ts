@@ -11,6 +11,7 @@ export const config = {
     '/private/manual-onboarding/:id',
     '/private/review',
     '/private/review-criteria',
+    '/private/my-reviews',
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

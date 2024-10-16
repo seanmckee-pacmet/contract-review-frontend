@@ -7,38 +7,25 @@ import { FileSelection } from './components/file-selection'
 import { ReviewTypeSelection } from './components/review-type-selection'
 import { ReviewResults } from './components/review-results'
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Trash2, Settings, Loader2 } from "lucide-react"
+import { Settings, Loader2 } from "lucide-react"
 import Link from 'next/link'
 
 // Replace these constants with the environment variable
 const API_DOCUMENT_URL = `${process.env.BASE_URL}/documents`
 const API_REVIEW_CRITERIA_URL = `${process.env.BASE_URL}/review_criteria`
 
-// Unified type definitions
-type Clause = {
-  id: string
-  name: string
-  description: string
-  relevantChunks?: string[]
+type QuoteInfo = {
+  document_type: string
+  header: string
+  content: string
 }
 
-type ReviewCriteriaGroup = {
-  id: string
-  name: string
-  clauses: Clause[]
+type ClauseReview = {
+  clause_name: string
+  quotes: QuoteInfo[]
 }
 
-type ReviewResult = {
-  clauses: Clause[]
-}
-
-type Review = {
-  id: string
-  company: string
-  files: string[]
-  purchaseOrder: File | null
-  reviewCriteriaGroup: ReviewCriteriaGroup | null
-}
+type ReviewResult = ClauseReview[]
 
 type Company = {
   id: string
@@ -50,20 +37,22 @@ type Document = {
   name: string
 }
 
-type ReviewFieldValue = string | string[] | File | null | ReviewCriteriaGroup | null;
-
+type ReviewCriteriaGroup = {
+  id: string
+  name: string
+  clauses: {
+    id: string
+    name: string
+    description: string
+  }[]
+}
 export default function ContractReviewPage() {
-  const [reviews, setReviews] = useState<Review[]>([{ 
-    id: '1', 
-    company: '', 
-    files: [], 
-    purchaseOrder: null, 
-    reviewCriteriaGroup: null
-  }])
-  const [currentReviewIndex, setCurrentReviewIndex] = useState(0)
+  const [company, setCompany] = useState('')
+  const [files, setFiles] = useState<string[]>([])
+  const [reviewCriteriaGroup, setReviewCriteriaGroup] = useState<ReviewCriteriaGroup | null>(null)
   const [reviewResults, setReviewResults] = useState<ReviewResult | null>(null)
   const [companies, setCompanies] = useState<Company[]>([])
-  const [documents, setDocuments] = useState<Record<string, Document[]>>({})
+  const [documents, setDocuments] = useState<Document[]>([])
   const [reviewCriteriaGroups, setReviewCriteriaGroups] = useState<ReviewCriteriaGroup[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -73,10 +62,10 @@ export default function ContractReviewPage() {
   }, [])
 
   useEffect(() => {
-    if (reviews[currentReviewIndex].company) {
-      fetchDocuments(reviews[currentReviewIndex].company)
+    if (company) {
+      fetchDocuments(company)
     }
-  }, [reviews, currentReviewIndex])
+  }, [company])
 
   const fetchCompanies = async () => {
     try {
@@ -90,15 +79,11 @@ export default function ContractReviewPage() {
   const fetchDocuments = async (companyId: string) => {
     try {
       const response = await axios.get(`${API_DOCUMENT_URL}/${companyId}`)
-      setDocuments(prevDocuments => ({
-        ...prevDocuments,
-        [companyId]: response.data.data
-      }))
+      setDocuments(response.data.data || [])
     } catch (error) {
       console.error("Error fetching documents:", error)
     }
   }
-
   const fetchReviewCriteriaGroups = async () => {
     try {
       const response = await axios.get(`${API_REVIEW_CRITERIA_URL}/criteria_groups`)
@@ -108,52 +93,43 @@ export default function ContractReviewPage() {
     }
   }
 
-  const addReview = () => {
-    setReviews([...reviews, { 
-      id: Date.now().toString(), 
-      company: '', 
-      files: [], 
-      purchaseOrder: null, 
-      reviewCriteriaGroup: null
-    }])
-    setCurrentReviewIndex(reviews.length)
-  }
-
-  const removeReview = (index: number) => {
-    const newReviews = reviews.filter((_, i) => i !== index)
-    setReviews(newReviews)
-    setCurrentReviewIndex(Math.min(currentReviewIndex, newReviews.length - 1))
-  }
-
-  const updateReview = (field: keyof Review, value: ReviewFieldValue) => {
-    const updatedReviews = [...reviews]
-    updatedReviews[currentReviewIndex] = { ...updatedReviews[currentReviewIndex], [field]: value }
-    setReviews(updatedReviews)
-    
-    // If the company is updated, reset the files
-    if (field === 'company') {
-      updatedReviews[currentReviewIndex].files = []
-    }
-  }
-
   const handleSubmit = async () => {
+    if (!company) {
+      alert("Please select a company before submitting.");
+      return;
+    }
+  
+    if (files.length === 0) {
+      alert("Please select at least one document before submitting.");
+      return;
+    }
+  
+    if (!reviewCriteriaGroup) {
+      alert("Please select a review type before submitting.");
+      return;
+    }
+  
     try {
-      setIsLoading(true) // Set loading to true when starting the review
-      const response = await axios.post<ReviewResult>(`${process.env.BASE_URL}/reviews/review`, {
-        ids: reviews[currentReviewIndex].files
+      setIsLoading(true);
+      const response = await axios.post<string[]>(`${process.env.BASE_URL}/reviews/review1`, {
+        ids: files
       }, {
         params: {
-          review_criteria_group_id: reviews[currentReviewIndex].reviewCriteriaGroup?.id
+          review_criteria_group_id: reviewCriteriaGroup.id
         }
-      })
-      setReviewResults(response.data)
-      console.log("Review results:", response.data)
+      });
+      const parsedResults: ReviewResult = response.data.map(item => JSON.parse(item));
+      setReviewResults(parsedResults);
+      console.log("Review results:", parsedResults);
     } catch (error) {
-      console.error("Error submitting review:", error)
+      console.error("Error submitting review:", error);
       // Handle error (e.g., show an error message to the user)
     } finally {
-      setIsLoading(false) // Set loading to false when the review is complete
+      setIsLoading(false);
     }
+  }
+  const isSubmitDisabled = () => {
+    return !company || files.length === 0 || !reviewCriteriaGroup;
   }
 
   return (
@@ -163,53 +139,22 @@ export default function ContractReviewPage() {
           <div className="px-6 py-8 sm:p-10">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Contract Review</h1>
             
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                {reviews.map((_, index) => (
-                  <Button
-                    key={index}
-                    variant={index === currentReviewIndex ? "default" : "outline"}
-                    onClick={() => setCurrentReviewIndex(index)}
-                  >
-                    Review {index + 1}
-                  </Button>
-                ))}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button onClick={addReview} variant="outline">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Review
-                </Button>
-                {reviews.length > 1 && (
-                  <Button onClick={() => removeReview(currentReviewIndex)} variant="outline" className="text-red-500">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remove Current
-                  </Button>
-                )}
-              </div>
-            </div>
-            
             <CompanySelect 
-              onSelect={(companyId) => updateReview('company', companyId)} 
-              value={reviews[currentReviewIndex].company}
+              onSelect={setCompany} 
+              value={company}
               companies={companies}
             />
             
             <FileSelection 
-              onSelect={(files) => updateReview('files', files)} 
-              selectedFiles={reviews[currentReviewIndex].files}
-              availableFiles={documents[reviews[currentReviewIndex].company] || []}
+              onSelect={setFiles} 
+              selectedFiles={files}
+              availableFiles={documents}
             />
-{/*             
-            <PurchaseOrderUpload 
-              onUpload={(file) => updateReview('purchaseOrder', file)} 
-              currentFile={reviews[currentReviewIndex].purchaseOrder}
-            /> */}
             
             <div className="flex items-center justify-between mb-6">
               <ReviewTypeSelection 
-                onSelectGroup={(group) => updateReview('reviewCriteriaGroup', group)} 
-                currentGroup={reviews[currentReviewIndex].reviewCriteriaGroup}
+                onSelectGroup={setReviewCriteriaGroup} 
+                currentGroup={reviewCriteriaGroup}
                 groups={reviewCriteriaGroups}
               />
               <Link href="/review-criteria">
@@ -221,7 +166,11 @@ export default function ContractReviewPage() {
             </div>
             
             <div className="mt-8">
-              <Button onClick={handleSubmit} className="w-full">
+              <Button 
+                onClick={handleSubmit} 
+                className="w-full" 
+                disabled={isSubmitDisabled()}
+              >
                 Submit for Review
               </Button>
             </div>
