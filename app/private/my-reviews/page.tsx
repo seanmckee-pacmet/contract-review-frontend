@@ -73,7 +73,7 @@ export default function MyReviews() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">My Reviews</h1>
       {reviews.length === 0 ? (
-        <p>You haven't saved any reviews yet.</p>
+        <p>You haven&apos;t saved any reviews yet.</p>
       ) : (
         <ul className="space-y-4">
           {reviews.map((review) => (
